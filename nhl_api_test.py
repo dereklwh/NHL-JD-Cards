@@ -7,6 +7,7 @@ print('Hi!')
 
 base_url = 'https://api-web.nhle.com/v1/'
 end_point = 'roster/VAN/current'
+
 # API TEST
 url = base_url + end_point
 response = requests.get(url)
