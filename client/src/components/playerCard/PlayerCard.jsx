@@ -5,14 +5,14 @@ const PlayerCard = ({ player }) => {
   return (
     <div className="player-card">
       <div className="number-badge">{player["Sweater Number"]}</div>
+      <h2 className="player-name">
+        {player["First Name"]} {player["Last Name"]}
+      </h2>
       <img
         className="headshot"
         src={player.Headshot}
         alt={`${player["First Name"]} ${player["Last Name"]}`}
       />
-      <h2 className="player-name">
-        {player["First Name"]} {player["Last Name"]}
-      </h2>
       <div className="player-stats">
         <p>Team: {player["Team Abbreviation"]}</p>
         <p>Position: {player.Position}</p>

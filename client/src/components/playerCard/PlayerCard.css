@@ -1,13 +1,13 @@
 .player-card {
     width: 300px;
     margin: 0 auto;
-    border: 2px solid #ccc;
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 16px;
+    padding: 32px;
     text-align: center;
     position: relative;
-    background-color: #f9f9f9;
+    background-image: linear-gradient(135deg, hwb(0 100% 0% / 0.6), hsla(0, 0%, 100%, 0.1));
+    background-color: rgb(54, 54, 129);
   }
   
   .number-badge {
@@ -28,18 +28,19 @@
     border-radius: 50%;
     object-fit: cover;
     margin: 16px 0;
+    background-color: white;
   }
   
   .player-name {
     margin: 8px 0;
     font-size: 1.5rem;
-    color: #333;
+    color: #000000;
   }
   
   .player-stats {
     margin-top: 16px;
     text-align: left;
     font-size: 1rem;
-    color: #555;
+    color: #000000;
   }
   
