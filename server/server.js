@@ -34,6 +34,23 @@ app.get('/player/:playerId',(req,res)=> {
     res.json(player);
 });
 
+
+app.get('/search', (req, res) => {
+    const query = req.query.name;
+    if (!query) {
+        return res.status(400).json({ error: 'No name provided'});
+    }
+
+    const lowerQuery = query.toLowerCase();
+
+    const results = playerTable.filter((player) => {
+        const fullName = `${player['First Name']} ${player['Last Name']}`.toLowerCase();
+        return fullName.includes(lowerQuery);
+    });
+
+    res.json(results.slice(0, 10));
+});
+
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 })
