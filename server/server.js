@@ -51,6 +51,10 @@ app.get('/search', (req, res) => {
     res.json(results.slice(0, 10));
 });
 
+app.get('/players', (req, res) => {
+  res.json(playerTable);
+});
+
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 })
