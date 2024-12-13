@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react'
-import PlayerCard from "./components/playerCard/PlayerCard"
-import  "./app.css";
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import React, { useEffect, useState } from 'react';
+import PlayerCard from "./components/playerCard/PlayerCard";
+import "./app.css";
+import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
-
   const [player, setPlayer] = useState(null);
   const [searchInput, setSearchInput] = useState("");
   const [playerId, setPlayerId] = useState('8478402');
@@ -14,16 +13,16 @@ function App() {
     try {
       const response = await fetch(`http://localhost:3000/player/${id}`);
       const data = await response.json();
-      setPlayer(data)
+      setPlayer(data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
 
-  // handles searching for playerid
+  // handles searching for playerId
   const handleSearch = () => {
     setPlayerId(searchInput);
-  }
+  };
 
   // if the user presses enter, search for the player
   const handleKeyPress = (e) => {
@@ -55,7 +54,6 @@ function App() {
     fetchSuggestions(searchInput);
   }, [searchInput]);
 
-
   return (
     <div className="app-container">
       <div>
@@ -67,40 +65,53 @@ function App() {
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Enter player ID"
-            style={{padding: '8px', width: '200px', marginRight: '10px'}}
+            style={{ padding: '8px', width: '200px', marginRight: '10px' }}
           />
-          {suggestions.length > 0 && (<ul style={{ listStyleType: 'none', background: '#fff', margin: '0', padding: '0', zIndex: 1000, position: 'absolute'}}>
-            {suggestions.map((player) => (
-              <li 
-                key={player['Player ID']} onClick={() => setPlayerId(player['Player ID'])}
-                style={{color: '#333'}}
-                className="suggestion-item"
-              >
-                {player['First Name']} {player['Last Name']}
-              </li>
-            ))}s
-          </ul>)}
+          {suggestions.length > 0 && (
+            <ul style={{ listStyleType: 'none', background: '#fff', margin: '0', padding: '0', zIndex: 1000, position: 'absolute'}}>
+              {suggestions.map((player) => (
+                <li 
+                  key={player['Player ID']} 
+                  onClick={() => setPlayerId(player['Player ID'])}
+                  style={{color: '#333'}}
+                  className="suggestion-item"
+                >
+                  {player['First Name']} {player['Last Name']}
+                </li>
+              ))}
+            </ul>
+          )}
           <button onClick={handleSearch}>Search</button>
         </div>
-        <TransitionGroup>
-          <CSSTransition
-            key={player ? player['Player ID'] : null}
-            timeout={500}
-            classNames="fade"
-          >
-            <div>
-              {player ? (
-                <PlayerCard player={player} />
-              ) : (
-                <p style={{ textAlign: "center" }}>Loading player data...</p>
-              )}
-            </div>
-          </CSSTransition>
-        </TransitionGroup>
-        </div>
+        
+        <AnimatePresence>
+          {player && (
+            <motion.div
+              key={player['Player ID']}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <PlayerCard player={player} />
+            </motion.div>
+          )}
+          {!player && (
+            <motion.p
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{ textAlign: "center" }}
+              transition={{ duration: 0.3 }}
+            >
+              Loading player data...
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
+}
 
-};
-
-export default App
+export default App;
