@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import PlayerCard from "./components/playerCard/PlayerCard";
+import PlayerGrid from './components/playerGrid/PlayerGrid';
 import "./app.css";
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
   const [player, setPlayer] = useState(null);
   const [searchInput, setSearchInput] = useState("");
-  const [playerId, setPlayerId] = useState('8478402');
+  const [playerId, setPlayerId] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
+
 
   const fetchPlayer = async (id) => {
     try {
@@ -16,6 +19,16 @@ function App() {
       setPlayer(data);
     } catch (error) {
       console.error('Error fetching data:', error);
+    }
+  };
+
+  const getPlayers = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/players');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching players:', error);
     }
   };
 
@@ -45,6 +58,15 @@ function App() {
       console.error('Error fetching suggestions:', error);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      const players = await getPlayers();
+      setAllPlayers(players);
+      setLoadingPlayers(false);
+    })();
+  }, []);
+  // const topPlayers = allPlayers.slice(0, 9);
 
   useEffect(() => {
     fetchPlayer(playerId);
@@ -97,16 +119,7 @@ function App() {
             </motion.div>
           )}
           {!player && (
-            <motion.p
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{ textAlign: "center" }}
-              transition={{ duration: 0.3 }}
-            >
-              Loading player data...
-            </motion.p>
+            <PlayerGrid players={allPlayers} onSelectPlayer={setPlayerId} />
           )}
         </AnimatePresence>
       </div>
