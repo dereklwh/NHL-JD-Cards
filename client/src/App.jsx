@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PlayerCard from "./components/playerCard/PlayerCard";
 import PlayerGrid from './components/playerGrid/PlayerGrid';
-import "./app.css";
 import { AnimatePresence, motion } from 'framer-motion';
+
+import {
+  Box, Pagination, Stack, FormControl, InputLabel, Select, MenuItem,
+  TextField, Button, Paper
+} from '@mui/material';
 
 function App() {
   const [player, setPlayer] = useState(null);
@@ -10,119 +14,156 @@ function App() {
   const [playerId, setPlayerId] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [allPlayers, setAllPlayers] = useState([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
 
+  // pagination
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
 
   const fetchPlayer = async (id) => {
-    try {
-      const response = await fetch(`http://localhost:3000/player/${id}`);
-      const data = await response.json();
-      setPlayer(data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
+    if (!id) return;
+    const res = await fetch(`http://localhost:3000/player/${id}`);
+    setPlayer(await res.json());
   };
 
   const getPlayers = async () => {
-    try {
-      const response = await fetch('http://localhost:3000/players');
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching players:', error);
-    }
+    const res = await fetch('http://localhost:3000/players');
+    return res.json();
   };
 
-  // handles searching for playerId
-  const handleSearch = () => {
-    setPlayerId(searchInput);
-  };
+  const handleSearch = () => setPlayerId(searchInput.trim());
 
-  // if the user presses enter, search for the player
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
-
-  // fetches list of players that match the search query
-  const fetchSuggestions = async (query) => {
-    if (!query) {
-      setSuggestions([]);
-      return;
-    }
-    try {
-      const response = await fetch(`http://localhost:3000/search?name=${query}`);
-      const data = await response.json();
-      setSuggestions(data);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    }
+  const fetchSuggestions = async (q) => {
+    if (!q) return setSuggestions([]);
+    const res = await fetch(`http://localhost:3000/search?name=${encodeURIComponent(q)}`);
+    setSuggestions(await res.json());
   };
 
   useEffect(() => {
     (async () => {
       const players = await getPlayers();
-      setAllPlayers(players);
+      setAllPlayers(players || []);
       setLoadingPlayers(false);
     })();
   }, []);
-  // const topPlayers = allPlayers.slice(0, 9);
 
-  useEffect(() => {
-    fetchPlayer(playerId);
-  }, [playerId]);
+  useEffect(() => { fetchPlayer(playerId); }, [playerId]);
+  useEffect(() => { fetchSuggestions(searchInput); }, [searchInput]);
+  useEffect(() => { setPlayer(null); }, [page, rowsPerPage]);
 
-  useEffect(() => {
-    fetchSuggestions(searchInput);
-  }, [searchInput]);
+  const total = allPlayers.length;
+  const pageCount = Math.max(1, Math.ceil(total / rowsPerPage));
+  const clampedPage = Math.min(page, pageCount);
+  const start = (clampedPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const paginatedPlayers = allPlayers.slice(start, end);
+
+  useEffect(() => { if (page > pageCount) setPage(pageCount); }, [pageCount]);
 
   return (
-    <div className="app-container">
-      <div>
-        <h1 style={{ textAlign: "center" }}>Player Cards Display</h1>
-        <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          <input
-            type="text"
+    <div className="min-h-screen w-full bg-slate-100">
+      <Box className="max-w-6xl mx-auto p-4 pt-6">
+        <h1 className="text-center text-3xl font-semibold mb-4">Player Cards Display</h1>
+
+        {/* Search row */}
+        <Stack direction="row" spacing={4} justifyContent="center" className="relative mb-4">
+          <TextField
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Enter player ID"
-            style={{ padding: '8px', width: '200px', marginRight: '10px' }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            label="Enter player ID or name"
+            size="small"
+            className="w-72"
           />
+          <Button variant="contained" onClick={handleSearch}>Search</Button>
+
           {suggestions.length > 0 && (
-            <ul style={{ listStyleType: 'none', background: '#fff', margin: '0', padding: '0', zIndex: 1000, position: 'absolute'}}>
-              {suggestions.map((player) => (
-                <li 
-                  key={player['Player ID']} 
-                  onClick={() => setPlayerId(player['Player ID'])}
-                  style={{color: '#333'}}
-                  className="suggestion-item"
-                >
-                  {player['First Name']} {player['Last Name']}
-                </li>
-              ))}
-            </ul>
+            <Paper elevation={6} className="absolute top-12 left-1 w-72 max-h-60 overflow-y-auto z-10">
+              <ul className="divide-y">
+                {suggestions.map(p => (
+                  <li
+                    key={p['Player ID']}
+                    onClick={() => {
+                      setPlayerId(p['Player ID']);
+                      setSearchInput(`${p['First Name']} ${p['Last Name']}`);
+                      setSuggestions([]);
+                    }}
+                    className="px-3 py-2 hover:bg-slate-100 cursor-pointer"
+                  >
+                    {p['First Name']} {p['Last Name']}
+                  </li>
+                ))}
+              </ul>
+            </Paper>
           )}
-          <button onClick={handleSearch}>Search</button>
-        </div>
-        
-        <AnimatePresence>
-          {player && (
+        </Stack>
+
+        <AnimatePresence mode="wait">
+          {player ? (
             <motion.div
               key={player['Player ID']}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.35 }}
             >
               <PlayerCard player={player} />
             </motion.div>
-          )}
-          {!player && (
-            <PlayerGrid players={allPlayers} onSelectPlayer={setPlayerId} />
+          ) : (
+            <motion.div
+              key={`grid-${clampedPage}-${rowsPerPage}-${total}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PlayerGrid
+                players={paginatedPlayers}
+                loading={loadingPlayers}
+                onSelectPlayer={setPlayerId}
+              />
+
+              {/* Pagination controls */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems="center"
+                justifyContent="between"
+                className="mt-6"
+              >
+                <FormControl size="small" className="min-w-36">
+                  <InputLabel id="rows-per-page-label">Per page</InputLabel>
+                  <Select
+                    labelId="rows-per-page-label"
+                    label="Per page"
+                    value={rowsPerPage}
+                    onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
+                  >
+                    {[6, 12, 24, 48].map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+                  </Select>
+                </FormControl>
+
+                <Pagination
+                  count={pageCount}
+                  page={clampedPage}
+                  onChange={(_, newPage) => setPage(newPage)}
+                  siblingCount={1}
+                  boundaryCount={1}
+                  color="primary"
+                  shape="rounded"
+                  showFirstButton
+                  showLastButton
+                  className="mx-auto"
+                />
+              </Stack>
+
+              <div className="text-center text-slate-500 text-sm mt-2">
+                Showing {total === 0 ? 0 : start + 1}–{Math.min(end, total)} of {total}
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </Box>
     </div>
   );
 }
